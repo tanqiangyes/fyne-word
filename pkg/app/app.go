@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
+	fyneApp "fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
@@ -18,7 +18,7 @@ import (
 type App struct {
 	app         fyne.App
 	window      fyne.Window
-	mainMenu    fyne.MainMenu
+	mainMenu    *fyne.MainMenu
 	toolbar     fyne.CanvasObject
 	content     fyne.CanvasObject
 	
@@ -29,17 +29,17 @@ type App struct {
 
 // New 创建新的基于go-word库的应用程序
 func New() *App {
-	app := &App{
-		app:        app.NewApp(),
+	myApp := &App{
+		app:        fyneApp.NewApp(),
 		docManager: document.NewManager(),
 	}
 	
-	app.setupMainWindow()
-	app.setupMenu()
-	app.setupToolbar()
-	app.setupContent()
+	myApp.setupMainWindow()
+	myApp.setupMenu()
+	myApp.setupToolbar()
+	myApp.setupContent()
 	
-	return app
+	return myApp
 }
 
 // Run 运行应用程序
@@ -72,7 +72,7 @@ func (app *App) setupContent() {
 }
 
 // createMainMenu 创建主菜单
-func (app *App) createMainMenu() fyne.MainMenu {
+func (app *App) createMainMenu() *fyne.MainMenu {
 	fileMenu := fyne.NewMenu("文件",
 		fyne.NewMenuItem("新建", app.newDocument),
 		fyne.NewMenuItem("打开", app.openDocument),
