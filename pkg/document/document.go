@@ -296,13 +296,17 @@ func (doc *Document) AddParagraph(text string) error {
 	
 	// 使用go-word库的API添加段落
 	builder := word.NewEnhancedDocumentBuilder()
-	// TODO: 需要根据go-word库的实际API来调整
-	// 目前先标记为已修改，后续完善
-	_ = builder
-	_ = text
+	paragraph := types.Paragraph{
+		Text: text,
+	}
+	
+	err := builder.AddParagraphToDocument(doc.WordDoc, paragraph)
+	if err != nil {
+		return fmt.Errorf("添加段落失败: %v", err)
+	}
 	
 	doc.IsModified = true
-	log.Println("段落添加成功（临时实现）")
+	log.Println("段落添加成功")
 	return nil
 }
 
@@ -316,13 +320,17 @@ func (doc *Document) AddText(text string) error {
 	
 	// 使用go-word库的API添加文本（通过添加段落实现）
 	builder := word.NewEnhancedDocumentBuilder()
-	// TODO: 需要根据go-word库的实际API来调整
-	// 目前先标记为已修改，后续完善
-	_ = builder
-	_ = text
+	paragraph := types.Paragraph{
+		Text: text,
+	}
+	
+	err := builder.AddParagraphToDocument(doc.WordDoc, paragraph)
+	if err != nil {
+		return fmt.Errorf("添加文本失败: %v", err)
+	}
 	
 	doc.IsModified = true
-	log.Println("文本添加成功（临时实现）")
+	log.Println("文本添加成功")
 	return nil
 }
 
