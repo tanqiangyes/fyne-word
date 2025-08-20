@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"github.com/tanqiangyes/go-word/pkg/word"
+	"github.com/tanqiangyes/go-word/pkg/writer"
 	"github.com/tanqiangyes/go-word/pkg/types"
 )
 
@@ -14,6 +15,7 @@ type Document struct {
 	FilePath    string
 	FileName    string
 	WordDoc     *word.Document  // 直接使用go-word库的Document类型
+	DocWriter   *writer.DocumentWriter // 使用DocumentWriter进行写入操作
 	IsModified  bool
 	IsOpen      bool
 }
@@ -68,17 +70,20 @@ func (m *Manager) OpenDocument(filePath string) (*Document, error) {
 	return doc, nil
 }
 
-// SaveDocument 使用go-word库保存文档
+// SaveDocument 使用DocumentWriter保存文档
 func (m *Manager) SaveDocument(doc *Document) error {
 	if doc == nil {
 		return fmt.Errorf("没有要保存的文档")
 	}
 	
+	if doc.DocWriter == nil {
+		return fmt.Errorf("文档写入器未初始化")
+	}
+	
 	log.Printf("正在保存文档: %s", doc.FilePath)
 	
-	// 使用go-word库的EnhancedDocumentBuilder保存文档
-	builder := word.NewEnhancedDocumentBuilder()
-	err := builder.SaveDocument(doc.WordDoc, doc.FilePath)
+	// 使用DocumentWriter保存文档
+	err := doc.DocWriter.Save(doc.FilePath)
 	if err != nil {
 		return fmt.Errorf("保存文档失败: %v", err)
 	}
@@ -88,10 +93,14 @@ func (m *Manager) SaveDocument(doc *Document) error {
 	return nil
 }
 
-// SaveDocumentAs 使用go-word库另存为
+// SaveDocumentAs 使用DocumentWriter另存为
 func (m *Manager) SaveDocumentAs(doc *Document, newPath string) error {
 	if doc == nil {
 		return fmt.Errorf("没有要保存的文档")
+	}
+	
+	if doc.DocWriter == nil {
+		return fmt.Errorf("文档写入器未初始化")
 	}
 	
 	// 检查新路径的扩展名
@@ -101,9 +110,8 @@ func (m *Manager) SaveDocumentAs(doc *Document, newPath string) error {
 	
 	log.Printf("正在另存为: %s", newPath)
 	
-	// 使用go-word库的EnhancedDocumentBuilder保存到新路径
-	builder := word.NewEnhancedDocumentBuilder()
-	err := builder.SaveDocument(doc.WordDoc, newPath)
+	// 使用DocumentWriter保存到新路径
+	err := doc.DocWriter.Save(newPath)
 	if err != nil {
 		return fmt.Errorf("另存为失败: %v", err)
 	}
@@ -196,8 +204,9 @@ func (m *Manager) CloseDocument(doc *Document) error {
 func (m *Manager) NewDocument() (*Document, error) {
 	log.Println("正在创建新文档")
 	
-	// 使用go-word库的word.New()方法创建文档
-	wordDoc, err := word.New()
+	// 使用DocumentWriter创建新文档
+	docWriter := writer.NewDocumentWriter()
+	err := docWriter.CreateNewDocument()
 	if err != nil {
 		return nil, fmt.Errorf("创建新文档失败: %v", err)
 	}
@@ -206,7 +215,8 @@ func (m *Manager) NewDocument() (*Document, error) {
 	doc := &Document{
 		FilePath:   "", // 新文档还没有保存路径
 		FileName:   "未命名文档.docx",
-		WordDoc:    wordDoc,
+		WordDoc:    nil, // 暂时设为nil，DocumentWriter会管理文档
+		DocWriter:  docWriter,
 		IsOpen:     true,
 		IsModified: true, // 新文档需要保存
 	}
@@ -288,19 +298,14 @@ func (doc *Document) GetMetadata() (interface{}, error) {
 
 // AddParagraph 向文档添加新段落
 func (doc *Document) AddParagraph(text string) error {
-	if doc.WordDoc == nil {
+	if doc.DocWriter == nil {
 		return fmt.Errorf("文档未打开")
 	}
 	
 	log.Printf("正在添加段落: %s", truncateText(text, 30))
 	
-	// 使用go-word库的API添加段落
-	builder := word.NewEnhancedDocumentBuilder()
-	paragraph := types.Paragraph{
-		Text: text,
-	}
-	
-	err := builder.AddParagraphToDocument(doc.WordDoc, paragraph)
+	// 使用DocumentWriter添加段落
+	err := doc.DocWriter.AddParagraph(text, "Normal")
 	if err != nil {
 		return fmt.Errorf("添加段落失败: %v", err)
 	}
@@ -312,19 +317,14 @@ func (doc *Document) AddParagraph(text string) error {
 
 // AddText 向文档添加文本
 func (doc *Document) AddText(text string) error {
-	if doc.WordDoc == nil {
+	if doc.DocWriter == nil {
 		return fmt.Errorf("文档未打开")
 	}
 	
 	log.Printf("正在添加文本: %s", truncateText(text, 30))
 	
-	// 使用go-word库的API添加文本（通过添加段落实现）
-	builder := word.NewEnhancedDocumentBuilder()
-	paragraph := types.Paragraph{
-		Text: text,
-	}
-	
-	err := builder.AddParagraphToDocument(doc.WordDoc, paragraph)
+	// 使用DocumentWriter添加文本（通过添加段落实现）
+	err := doc.DocWriter.AddParagraph(text, "Normal")
 	if err != nil {
 		return fmt.Errorf("添加文本失败: %v", err)
 	}
