@@ -196,15 +196,17 @@ func (m *Manager) CloseDocument(doc *Document) error {
 func (m *Manager) NewDocument() (*Document, error) {
 	log.Println("正在创建新文档")
 	
-	// TODO: go-word库的Build方法有严重问题，暂时绕过
-	// 创建一个空的文档结构，后续再完善
-	log.Println("注意: 使用临时实现，go-word库的Build方法有严重问题")
+	// 使用go-word库的word.New()方法创建文档
+	wordDoc, err := word.New()
+	if err != nil {
+		return nil, fmt.Errorf("创建新文档失败: %v", err)
+	}
 	
 	// 创建新文档实例
 	doc := &Document{
 		FilePath:   "", // 新文档还没有保存路径
 		FileName:   "未命名文档.docx",
-		WordDoc:    nil, // 暂时设为nil，避免崩溃
+		WordDoc:    wordDoc,
 		IsOpen:     true,
 		IsModified: true, // 新文档需要保存
 	}
@@ -214,7 +216,7 @@ func (m *Manager) NewDocument() (*Document, error) {
 	m.documents[tempID] = doc
 	m.currentDoc = doc
 	
-	log.Println("新文档创建成功（临时实现）")
+	log.Println("新文档创建成功")
 	return doc, nil
 }
 
