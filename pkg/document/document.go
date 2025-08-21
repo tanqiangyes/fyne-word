@@ -7,7 +7,6 @@ import (
 	"strings"
 	"github.com/tanqiangyes/go-word/pkg/word"
 	"github.com/tanqiangyes/go-word/pkg/writer"
-	"github.com/tanqiangyes/go-word/pkg/types"
 )
 
 // Document 基于go-word库的文档结构
@@ -131,7 +130,7 @@ func (m *Manager) SaveDocumentAs(doc *Document, newPath string) error {
 	return nil
 }
 
-// ExportToPDF 使用go-word库导出为PDF
+// ExportToPDF 使用DocumentWriter导出为PDF
 func (m *Manager) ExportToPDF(doc *Document, outputPath string) error {
 	if doc == nil {
 		return fmt.Errorf("没有要导出的文档")
@@ -143,16 +142,21 @@ func (m *Manager) ExportToPDF(doc *Document, outputPath string) error {
 	
 	log.Printf("正在导出PDF: %s", outputPath)
 	
-	// 使用go-word库的EnhancedDocumentBuilder导出PDF
-	builder := word.NewEnhancedDocumentBuilder()
-	format := types.DocumentFormat{Type: "pdf"}
-	err := builder.SaveDocumentAs(doc.WordDoc, outputPath, format)
+	// 由于DocumentWriter没有直接的PDF导出功能，
+	// 我们先将文档保存为.docx，然后使用第三方工具转换
+	// 或者实现一个基本的PDF生成功能
+	
+	// 临时实现：保存为.docx并提示用户
+	tempDocxPath := strings.TrimSuffix(outputPath, ".pdf") + ".docx"
+	err := m.SaveDocumentAs(doc, tempDocxPath)
 	if err != nil {
-		return fmt.Errorf("PDF导出失败: %v", err)
+		return fmt.Errorf("保存临时文档失败: %v", err)
 	}
 	
-	log.Printf("PDF导出成功: %s", outputPath)
-	return nil
+	log.Printf("PDF导出功能暂未实现，文档已保存为: %s", tempDocxPath)
+	log.Printf("请使用Microsoft Word或其他工具将文档转换为PDF")
+	
+	return fmt.Errorf("PDF导出功能暂未实现，请使用外部工具转换")
 }
 
 // GetCurrentDocument 获取当前文档
