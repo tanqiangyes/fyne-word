@@ -80,6 +80,11 @@ func (m *Manager) SaveDocument(doc *Document) error {
 		return fmt.Errorf("文档写入器未初始化")
 	}
 	
+	// 检查文件路径是否为空
+	if doc.FilePath == "" {
+		return &SavePathNotSetError{}
+	}
+	
 	log.Printf("正在保存文档: %s", doc.FilePath)
 	
 	// 使用DocumentWriter保存文档
@@ -91,6 +96,19 @@ func (m *Manager) SaveDocument(doc *Document) error {
 	doc.IsModified = false
 	log.Printf("文档保存成功: %s", doc.FilePath)
 	return nil
+}
+
+// SavePathNotSetError 表示保存路径未设置的错误
+type SavePathNotSetError struct{}
+
+func (e *SavePathNotSetError) Error() string {
+	return "文档路径未设置，请使用'另存为'功能选择保存位置"
+}
+
+// IsSavePathNotSetError 检查是否为保存路径未设置错误
+func IsSavePathNotSetError(err error) bool {
+	_, ok := err.(*SavePathNotSetError)
+	return ok
 }
 
 // SaveDocumentAs 使用DocumentWriter另存为

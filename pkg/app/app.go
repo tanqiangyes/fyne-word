@@ -197,19 +197,53 @@ func (app *App) openDocument() {
 
 // saveDocument 保存文档
 func (app *App) saveDocument() {
-    doc := app.docManager.GetCurrentDocument()
-    if doc == nil {
-        dialog.ShowInformation("提示", "没有要保存的文档", app.window)
-        return
-    }
+	doc := app.docManager.GetCurrentDocument()
+	if doc == nil {
+		dialog.ShowInformation("提示", "没有要保存的文档", app.window)
+		return
+	}
 
-    err := app.docManager.SaveDocument(doc)
-    if err != nil {
-        dialog.ShowError(err, app.window)
-        return
-    }
+	err := app.docManager.SaveDocument(doc)
+	if err != nil {
+		// 检查是否为保存路径未设置错误
+		if document.IsSavePathNotSetError(err) {
+			// 自动打开文件保存对话框
+			app.showSaveDialog(doc)
+			return
+		}
+		// 其他错误正常显示
+		dialog.ShowError(err, app.window)
+		return
+	}
 
-    dialog.ShowInformation("成功", "文档保存成功", app.window)
+	dialog.ShowInformation("成功", "文档保存成功", app.window)
+}
+
+// showSaveDialog 显示保存对话框
+func (app *App) showSaveDialog(doc *document.Document) {
+	fd := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
+		if err != nil {
+			dialog.ShowError(err, app.window)
+			return
+		}
+		if writer == nil {
+			return
+		}
+		defer writer.Close()
+
+		newPath := writer.URI().Path()
+		err = app.docManager.SaveDocumentAs(doc, newPath)
+		if err != nil {
+			dialog.ShowError(err, app.window)
+			return
+		}
+
+		dialog.ShowInformation("成功", "文档保存成功", app.window)
+	}, app.window)
+
+	fd.SetFileName(doc.FileName)
+	fd.SetFilter(storage.NewExtensionFileFilter([]string{".docx"}))
+	fd.Show()
 }
 
 // saveDocumentAs 另存为
