@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	fyne.io/fyne/v2 v2.6.2
-	github.com/tanqiangyes/go-word v1.0.1
+	github.com/tanqiangyes/go-word v1.3.0
 )
 
 require (

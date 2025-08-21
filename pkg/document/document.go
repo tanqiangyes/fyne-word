@@ -14,6 +14,7 @@ import (
 type Document struct {
 	FilePath    string
 	FileName    string
+	Title       string           // 文档标题
 	WordDoc     *word.Document  // 直接使用go-word库的Document类型
 	DocWriter   *writer.DocumentWriter // 使用DocumentWriter进行写入操作
 	IsModified  bool
@@ -215,6 +216,7 @@ func (m *Manager) NewDocument() (*Document, error) {
 	doc := &Document{
 		FilePath:   "", // 新文档还没有保存路径
 		FileName:   "未命名文档.docx",
+		Title:      "未命名文档", // 设置默认标题
 		WordDoc:    nil, // 暂时设为nil，DocumentWriter会管理文档
 		DocWriter:  docWriter,
 		IsOpen:     true,
@@ -336,21 +338,17 @@ func (doc *Document) AddText(text string) error {
 
 // SetTitle 设置文档标题
 func (doc *Document) SetTitle(title string) error {
-	if doc.WordDoc == nil {
-		return fmt.Errorf("文档未打开")
+	if doc == nil {
+		return fmt.Errorf("文档未初始化")
 	}
 	
 	log.Printf("正在设置文档标题: %s", title)
 	
-	// 使用go-word库的API设置标题
-	builder := word.NewEnhancedDocumentBuilder()
-	// TODO: 需要根据go-word库的实际API来调整
-	// 目前先标记为已修改，后续完善
-	_ = builder
-	_ = title
-	
+	// 设置文档标题
+	doc.Title = title
 	doc.IsModified = true
-	log.Println("标题设置成功（临时实现）")
+	
+	log.Printf("标题设置成功: %s", title)
 	return nil
 }
 

@@ -32,7 +32,7 @@ type App struct {
 // New 创建新的基于go-word库的应用程序
 func New() *App {
     myApp := &App{
-        app:        fyneApp.New(),
+        app:        fyneApp.NewWithID("com.tanqiang.fyneword"),
         docManager: document.NewManager(),
     }
 

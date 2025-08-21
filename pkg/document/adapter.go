@@ -18,36 +18,55 @@ func NewDocumentAdapter(goWordDoc *Document) *DocumentAdapter {
 
 // GetTitle 获取文档标题
 func (da *DocumentAdapter) GetTitle() string {
-	if da.goWordDoc == nil || da.goWordDoc.WordDoc == nil {
+	if da.goWordDoc == nil {
 		return "未知文档"
 	}
 	
-	// 尝试从go-word库获取标题，如果失败则使用文件名
-	metadata, err := da.goWordDoc.GetMetadata()
-	if err != nil {
-		return da.goWordDoc.FileName
+	// 优先使用文档的Title字段
+	if da.goWordDoc.Title != "" {
+		return da.goWordDoc.Title
 	}
 	
-	// TODO: 根据go-word库的实际接口提取标题
-	// 这里需要根据实际的数据结构来实现
-	_ = metadata
+	// 如果没有设置标题，使用文件名
 	return da.goWordDoc.FileName
 }
 
 // GetParagraphCount 获取段落数量
 func (da *DocumentAdapter) GetParagraphCount() int {
-	if da.goWordDoc == nil || da.goWordDoc.WordDoc == nil {
+	if da.goWordDoc == nil {
 		return 0
 	}
 	
-	paragraphs, err := da.goWordDoc.GetParagraphs()
-	if err != nil {
-		return 0
+	// 如果使用DocumentWriter，从DocumentWriter的document字段获取段落数量
+	if da.goWordDoc.DocWriter != nil {
+		// 通过DocumentWriter的document字段访问MainDocumentPart
+		if da.goWordDoc.DocWriter.Document != nil {
+			mainPart := da.goWordDoc.DocWriter.Document.GetMainPart()
+			if mainPart != nil && mainPart.Content != nil {
+				return len(mainPart.Content.Paragraphs)
+			}
+		}
+		// 如果无法获取，返回默认值
+		return 1
 	}
 	
-	// TODO: 根据go-word库的实际接口计算段落数量
-	_ = paragraphs
-	return 1 // 临时返回值
+	// 如果使用WordDoc，尝试从那里获取
+	if da.goWordDoc.WordDoc != nil {
+		paragraphs, err := da.goWordDoc.GetParagraphs()
+		if err != nil {
+			return 0
+		}
+		
+		// 尝试将interface{}转换为切片来计算长度
+		if paraSlice, ok := paragraphs.([]interface{}); ok {
+			return len(paraSlice)
+		}
+		
+		// 如果无法确定类型，返回默认值
+		return 1
+	}
+	
+	return 0
 }
 
 // GetTableCount 获取表格数量
@@ -114,19 +133,46 @@ func (da *DocumentAdapter) GetText() string {
 
 // GetParagraphText 获取指定段落的文本
 func (da *DocumentAdapter) GetParagraphText(index int) string {
-	if da.goWordDoc == nil || da.goWordDoc.WordDoc == nil {
+	if da.goWordDoc == nil {
 		return ""
 	}
 	
-	paragraphs, err := da.goWordDoc.GetParagraphs()
-	if err != nil {
-		return fmt.Sprintf("获取段落时出错: %v", err)
+	// 如果使用DocumentWriter，从DocumentWriter的document字段获取段落文本
+	if da.goWordDoc.DocWriter != nil {
+		if da.goWordDoc.DocWriter.Document != nil {
+			mainPart := da.goWordDoc.DocWriter.Document.GetMainPart()
+			if mainPart != nil && mainPart.Content != nil {
+				if index >= 0 && index < len(mainPart.Content.Paragraphs) {
+					paragraph := mainPart.Content.Paragraphs[index]
+					// 从段落中提取文本
+					if len(paragraph.Runs) > 0 {
+						var text string
+						for _, run := range paragraph.Runs {
+							text += run.Text
+						}
+						return text
+					}
+					return "空段落"
+				}
+			}
+		}
+		return fmt.Sprintf("无法获取段落%d", index+1)
 	}
 	
-	// TODO: 根据go-word库的实际接口提取指定段落文本
-	_ = paragraphs
-	_ = index
-	return "示例段落文本" // 临时返回值
+	// 如果使用WordDoc，尝试从那里获取
+	if da.goWordDoc.WordDoc != nil {
+		paragraphs, err := da.goWordDoc.GetParagraphs()
+		if err != nil {
+			return fmt.Sprintf("获取段落时出错: %v", err)
+		}
+		
+		// TODO: 根据go-word库的实际接口提取指定段落文本
+		_ = paragraphs
+		_ = index
+		return "示例段落文本" // 临时返回值
+	}
+	
+	return "文档未初始化"
 }
 
 // GetTableInfo 获取指定表格的信息
